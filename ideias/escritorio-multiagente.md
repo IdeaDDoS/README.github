@@ -52,6 +52,19 @@ Se for só "ficar bonito", morre aqui.
 
 > ❓ **Pergunta que define a próxima etapa:** isso é laboratório de aprendizado ou produto?
 
+### ✅ Resposta (2026-11-06): nenhum dos dois — é **vitrine**
+
+- **Público:** pessoas não técnicas (time e clientes).
+- **Função do pixel art:** ser lúdico e mostrar **até onde dá para ir**, não ser o produto final.
+- **Lógica:** se dá para fazer um boneco andar da mesa do Gerente até a do Dev pedindo uma tarefa, dá para fazer o mesmo como dashboard (blocos ligados com luzinhas), ou com visual corporativo.
+- **Regra:** o visual é uma **pele trocável**. Gastar o mínimo nele. O contrato de eventos é o ativo.
+
+```text
+            ┌──► 🎮 Pele "joguinho" (pixel art)   ← agora
+eventos ────┼──► 📊 Pele "dashboard" (blocos + luzes)
+            └──► 💼 Pele "corporativa"
+```
+
 ---
 
 ## 3. Esboço — o pensamento essencial
@@ -136,11 +149,21 @@ Stack sugerida (a mais simples, não a mais fácil):
 
 ---
 
-## 5. Pesquisa — pendente
+## 5. Pesquisa — em andamento
 
+Referências (o que olhar em cada uma):
+
+| Projeto | Link | Olhar para |
+|---|---|---|
+| Pixel Agents | [pixel-agents-hq/pixel-agents](https://github.com/pixel-agents-hq/pixel-agents) | **Interface** — escritório pixel art que só *observa* os logs dos agentes (provável vídeo de origem) |
+| ChatDev | [OpenBMB/ChatDev](https://github.com/OpenBMB/ChatDev) | **Papéis** (CEO, CTO, programador, tester) + log replayável |
+| MetaGPT | [FoundationAgents/MetaGPT](https://github.com/FoundationAgents/MetaGPT) | **Protocolo** entre papéis (PM → arquiteto → engenheiro) |
+| AI Town | [a16z-infra/ai-town](https://github.com/a16z-infra/ai-town) | **Mundo** pixel art sincronizado com agentes |
+| Generative Agents (Smallville) | [joonspk-research/generative_agents](https://github.com/joonspk-research/generative_agents) · [paper](https://arxiv.org/abs/2304.03442) | **Fundamento** acadêmico: memória, reflexão, planejamento |
+
+- [ ] Ver como o Pixel Agents mapeia atividade do agente → animação (é o nosso "contrato").
 - [ ] Ler como ChatDev e MetaGPT definem papéis e protocolo de comunicação.
-- [ ] Ver como AI Town desenha e sincroniza o mundo.
-- [ ] Decidir: laboratório ou produto?
+- [x] Decidir: laboratório ou produto? → **vitrine** (ver Triagem).
 - [ ] Listar 3 demandas reais (do trabalho com dados) que esse escritório resolveria.
 
 ## 6. Validação — pendente
