@@ -1,6 +1,7 @@
 # 🏢 Escritório Multiagente
 
-> **Etapa atual:** `Triagem`
+> **Etapa atual:** `🏆 Sobreviveu` (2026-11-06) → repositório próprio: [IdeaDDoS/office-harness](https://github.com/IdeaDDoS/office-harness)
+> Esta página fica congelada como registro. A ideia continua no repositório novo.
 > **Entrada:** 2026-11-06
 > **Origem:** vi alguém fazendo — ideia "emprestada", com orgulho.
 
@@ -167,6 +168,22 @@ Referências (o que olhar em cada uma):
 - [x] Decidir: laboratório ou produto? → **vitrine** (ver Triagem).
 - [ ] Listar 3 demandas reais (do trabalho com dados) que esse escritório resolveria.
 
-## 6. Validação — pendente
+## 6. Validação — 2026-11-06
 
-## 7. Protótipo — pendente
+- **Utilidade e demanda:** existe uma demanda real além da vitrine. O Admin está sobrecarregado
+  porque entende **e** executa. Hoje a orquestração é feita à mão: várias sessões, perguntas
+  escritas pelo usuário, a resposta de uma colada na outra. O escritório vira o orquestrador
+  que tira a execução de O Admin.
+- **Capacidade:** v1 a v3 saíram no mesmo dia, sem dependência pesada.
+- **Esforço × retorno:** substitui o `claude-harness` no longo prazo; vale um repositório.
+
+## 7. Protótipo — 2026-11-06
+
+- v1: tela tocando eventos falsos (PR #1).
+- v2: cérebro com regras prontas e a cadeira separada do agente (PR #2).
+- v3: cérebro ligado à tela por WebSocket (PR #3).
+
+## 🏆 Sobreviveu
+
+Ganhou repositório próprio: **[IdeaDDoS/office-harness](https://github.com/IdeaDDoS/office-harness)**.
+A arquitetura do orquestrador (briefing, retorno, ciclo, limites) nasceu lá, em `docs/orquestrador.md`.
