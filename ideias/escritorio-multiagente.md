@@ -139,7 +139,7 @@ Cada etapa entrega algo visível. Nenhuma depende de perfeição da anterior.
 1. **v0 — Contrato:** escrever o schema dos eventos. Nada mais.
 2. **v1 — Corpo burro:** escritório em canvas tocando uma lista de eventos falsos (replay). ✅ [`prototipos/escritorio-multiagente/index.html`](../prototipos/escritorio-multiagente/index.html) — sprites desenhados em código (sem asset de terceiros), já aceita `?ws=` para o cérebro.
 3. **v2 — Cérebro burro:** Gerente + 1 agente em Python, imprimindo eventos no terminal. ✅ [`prototipos/escritorio-multiagente/cerebro/`](../prototipos/escritorio-multiagente/cerebro/) — sem LLM: o Gerente roteia por palavra-chave e o agente devolve resposta pronta. **Cadeira ≠ agente:** a cadeira é a casca fixa; quem senta nela vem do `elenco.json` e chega ao corpo pelo evento `seat.assign` (troca só a plaquinha).
-4. **v3 — Conectar:** cérebro → WebSocket → corpo.
+4. **v3 — Conectar:** cérebro → WebSocket → corpo. ✅ `cerebro/servidor.py` (FastAPI) serve a tela em `http://localhost:8000` e o canal em `/ws`. Ao conectar, manda o `seat.assign` lido do `elenco.json` na hora; recebe `{"demanda": "..."}` da caixa de demanda e devolve os eventos com pausa, no ritmo da animação. Aberta como arquivo, a tela continua rodando a demo.
 5. **v4 — Elenco completo:** os 5 papéis, roteamento real pelo Gerente.
 6. **v5 — Interação:** clicar no boneco abre o histórico/raciocínio dele.
 
