@@ -136,7 +136,7 @@ idle ──► walking ──► working ──► talking ──► idle
 Cada etapa entrega algo visível. Nenhuma depende de perfeição da anterior.
 
 1. **v0 — Contrato:** escrever o schema dos eventos. Nada mais.
-2. **v1 — Corpo burro:** escritório em canvas tocando uma lista de eventos falsos (replay).
+2. **v1 — Corpo burro:** escritório em canvas tocando uma lista de eventos falsos (replay). ✅ [`prototipos/escritorio-multiagente/index.html`](../prototipos/escritorio-multiagente/index.html) — sprites desenhados em código (sem asset de terceiros), já aceita `?ws=` para o cérebro.
 3. **v2 — Cérebro burro:** Gerente + 1 agente em Python, imprimindo eventos no terminal.
 4. **v3 — Conectar:** cérebro → WebSocket → corpo.
 5. **v4 — Elenco completo:** os 5 papéis, roteamento real pelo Gerente.
