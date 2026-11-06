@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Escritório Multiagente</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1d1f2b; --panel: #272a3a; --text: #e8e6f0; --muted: #9a98ad; --accent: #ffd166; --line: #3a3e55;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; }
+  header { padding: 12px 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+  h1 { font-family: 'Press Start 2P', monospace; font-size: 13px; margin: 0; color: var(--accent); }
+  button { font-family: 'Press Start 2P', monospace; font-size: 9px; padding: 8px 10px; background: var(--panel); color: var(--text); border: 2px solid var(--line); cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  main { display: flex; gap: 16px; padding: 16px; flex-wrap: wrap; align-items: flex-start; }
+  #sala { image-rendering: pixelated; border: 4px solid #000; max-width: 100%; background: #000; }
+  aside { flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 12px; }
+  .box { background: var(--panel); border: 2px solid var(--line); padding: 10px; }
+  .box h2 { font-family: 'Press Start 2P', monospace; font-size: 9px; margin: 0 0 8px; color: var(--muted); }
+  #log { font: 11px/1.45 ui-monospace, monospace; height: 260px; overflow: auto; margin: 0; white-space: pre-wrap; }
+  #log .t { color: var(--accent); }
+  textarea { width: 100%; height: 70px; background: #15161f; color: var(--text); border: 1px solid var(--line); font: 11px ui-monospace, monospace; padding: 6px; }
+  #galeria { image-rendering: pixelated; max-width: 100%; }
+  small { color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏢 ESCRITÓRIO MULTIAGENTE</h1>
+  <button id="btnDemo">▶ Demo</button>
+  <button id="btnParar">⏸ Parar</button>
+  <button id="btnContratar">+ Contratar</button>
+</header>
+<main>
+  <canvas id="sala"></canvas>
+  <aside>
+    <div class="box">
+      <h2>📨 EVENTOS (o contrato)</h2>
+      <pre id="log"></pre>
+    </div>
+    <div class="box">
+      <h2>✍️ EMITIR EVENTO</h2>
+      <textarea id="evt">{"t":"task.assigned","from":"gerente","to":"dev","msg":"Corrige o bug do login"}</textarea>
+      <button id="btnEmitir">Emitir</button>
+    </div>
+    <div class="box">
+      <h2>🎭 ELENCO (look 0–9)</h2>
+      <canvas id="galeria"></canvas><br>
+      <small>Escolha o look de cada agente em <code>EQUIPE</code>, no topo do script.</small>
+    </div>
+  </aside>
+</main>
+
+<script>
+/* ============================================================
+   1. CONFIGURAÇÃO — edite aqui
+   ============================================================ */
+// O primeiro da lista é sempre o gerente (mesa lá em cima).
+const EQUIPE = [
+  { id: 'gerente',    nome: 'Gerente',    look: 0 },
+  { id: 'dev',        nome: 'Dev',        look: 1 },
+  { id: 'dados',      nome: 'Dados',      look: 2 },
+  { id: 'estagiario', nome: 'Estagiário', look: 3 },
+  { id: 'impressora', nome: 'Impressora', look: 4 },
+];
+
+// 10 looks. Mesma "forma", paletas e cabelos diferentes.
+const LOOKS = [
+  { pele: '#f1c27d', cabelo: '#2c1b10', estilo: 'curto',  camisa: '#26357a', calca: '#1b1b24' }, // 0 terno
+  { pele: '#e0ac69', cabelo: '#111111', estilo: 'bone',   camisa: '#2f8f5b', calca: '#2b2f45' }, // 1 dev de boné
+  { pele: '#8d5524', cabelo: '#111111', estilo: 'longo',  camisa: '#7a3ea8', calca: '#2b2f45' }, // 2
+  { pele: '#ffdbac', cabelo: '#d6b370', estilo: 'curto',  camisa: '#e07a2f', calca: '#3b5998' }, // 3
+  { pele: '#c68642', cabelo: '#5a3825', estilo: 'curto',  camisa: '#c0392b', calca: '#333333' }, // 4
+  { pele: '#ffdbac', cabelo: '#b03a2e', estilo: 'longo',  camisa: '#1f9bb4', calca: '#222222' }, // 5
+  { pele: '#e0ac69', cabelo: '#777777', estilo: 'careca', camisa: '#556b2f', calca: '#3a2f25' }, // 6
+  { pele: '#8d5524', cabelo: '#2c1b10', estilo: 'bone',   camisa: '#d4a017', calca: '#1b1b24' }, // 7
+  { pele: '#f1c27d', cabelo: '#111111', estilo: 'longo',  camisa: '#e75480', calca: '#2b2f45' }, // 8
+  { pele: '#c68642', cabelo: '#3d2b1f', estilo: 'careca', camisa: '#eeeeee', calca: '#26357a' }, // 9
+];
+
+/* ============================================================
+   2. SPRITES — pixel art desenhado em texto (12x16)
+   h=cabelo s=pele e=olho c=camisa p=calça b=sapato
+   ============================================================ */
+const BASE = [
+  '....hhhh....',
+  '...hhhhhh...',
+  '...hssssh...',
+  '...sesses...',
+  '...ssssss...',
+  '....ssss....',
+  '..cccccccc..',
+  '.cccccccccc.',
+  '.cccccccccc.',
+  '.sccccccccs.',
+  '..cccccccc..',
+  '..pppppppp..',
+  '..ppp..ppp..',
+  '..ppp..ppp..',
+  '..bbb..bbb..',
+  '............',
+];
+const PERNAS = {
+  parado: ['..ppp..ppp..', '..ppp..ppp..', '..bbb..bbb..'],
+  passo1: ['..ppp..ppp..', '.ppp....pp..', '.bbb.....bb.'],
+  passo2: ['..ppp..ppp..', '..pp....ppp.', '.bb.....bbb.'],
+};
+
+function montarSprite(look, quadro) {
+  const g = BASE.map(l => l.split(''));
+  const pernas = PERNAS[quadro];
+  for (let i = 0; i < 3; i++) g[12 + i] = pernas[i].split('');
+  if (look.estilo === 'longo') for (let r = 2; r <= 6; r++) { g[r][2] = 'h'; g[r][9] = 'h'; }
+  if (look.estilo === 'careca') { g[0] = '............'.split(''); g[1] = '....ssss....'.split(''); g[2][3] = 's'; g[2][8] = 's'; }
+  if (look.estilo === 'bone') { g[1] = '...hhhhhhhh.'.split(''); g[2] = '...hhhhhhhhh'.split(''); g[3] = '...sesses...'.split(''); }
+  const cor = { h: look.cabelo, s: look.pele, e: '#1a1a1a', c: look.camisa, p: look.calca, b: '#2a1a10' };
+  return g.map(l => l.map(ch => cor[ch] || null));
+}
+const CACHE = {};
+function sprite(lookIdx, quadro) {
+  const k = lookIdx + quadro;
+  return CACHE[k] || (CACHE[k] = montarSprite(LOOKS[lookIdx % LOOKS.length], quadro));
+}
+
+/* ============================================================
+   3. LAYOUT — gerente no topo, 3 colunas tipo sala de aula
+   ============================================================ */
+const ESCALA = 3, W = 300;
+const COLUNAS = [60, 150, 240];
+const LINHA0 = 125, PASSO_LINHA = 58, CORREDOR = 92;
+const GERENTE_POS = { x: 150, y: 58 };
+const IMPRESSORA_POS = { x: 268, y: 52 };
+
+const cv = document.getElementById('sala');
+const ctx = cv.getContext('2d');
+let H = 0;
+
+function posMesa(i) {
+  if (i === 0) return { ...GERENTE_POS };
+  const k = i - 1;
+  return { x: COLUNAS[k % 3], y: LINHA0 + Math.floor(k / 3) * PASSO_LINHA };
+}
+function redimensionar() {
+  const linhas = Math.ceil((agentes.length - 1) / 3);
+  H = LINHA0 + Math.max(1, linhas) * PASSO_LINHA - 10;
+  cv.width = W * ESCALA; cv.height = H * ESCALA;
+  ctx.imageSmoothingEnabled = false;
+}
+
+/* ============================================================
+   4. AGENTES — estado + fila de ações
+   ============================================================ */
+const agentes = [];
+const porId = {};
+function contratar(def) {
+  const i = agentes.length;
+  const mesa = posMesa(i);
+  const larg = i === 0 ? 30 : 20;
+  const a = {
+    ...def, i, mesa, larg,
+    x: mesa.x, y: mesa.y + 4,
+    lado: { x: mesa.x + larg + 6, y: mesa.y + 6 },
+    estado: 'idle', fila: [], acao: null, balao: null, passo: 0, sentado: true,
+  };
+  agentes.push(a); porId[a.id] = a;
+  redimensionar();
+  return a;
+}
+EQUIPE.forEach(contratar);
+
+const sede = a => ({ x: a.mesa.x, y: a.mesa.y + 4 });
+// rota: sai pela lateral da mesa → corredor → lateral do destino
+function rota(de, para) {
+  return [de, { x: de.x, y: CORREDOR }, { x: para.x, y: CORREDOR }, para];
+}
+const ladoImpressora = { x: IMPRESSORA_POS.x - 18, y: IMPRESSORA_POS.y + 22 };
+
+function enfileirar(a, ...acoes) { a.fila.push(...acoes); }
+const andar = pts => ({ tipo: 'andar', pts });
+const falar = (txt, ms = 2200) => ({ tipo: 'falar', txt, ms });
+const fazer = fn => ({ tipo: 'fazer', fn });
+
+const VEL = 70; // px lógicos por segundo
+function atualizarAgente(a, dt, agora) {
+  if (!a.acao) {
+    a.acao = a.fila.shift() || null;
+    if (!a.acao) return;
+    if (a.acao.tipo === 'andar') a.sentado = false;
+    if (a.acao.tipo === 'falar') { a.balao = { txt: a.acao.txt, ate: agora + a.acao.ms }; a.acao.fim = agora + a.acao.ms; }
+    if (a.acao.tipo === 'fazer') { a.acao.fn(a); a.acao = null; return; }
+  }
+  const ac = a.acao;
+  if (ac.tipo === 'andar') {
+    const alvo = ac.pts[0];
+    const dx = alvo.x - a.x, dy = alvo.y - a.y, d = Math.hypot(dx, dy);
+    const s = VEL * dt;
+    if (d <= s) { a.x = alvo.x; a.y = alvo.y; ac.pts.shift(); }
+    else { a.x += dx / d * s; a.y += dy / d * s; }
+    a.passo += dt;
+    if (!ac.pts.length) {
+      a.acao = null;
+      const sd = sede(a);
+      if (Math.abs(a.x - sd.x) < 1 && Math.abs(a.y - sd.y) < 1) a.sentado = true;
+    }
+  } else if (ac.tipo === 'falar' && agora >= ac.fim) a.acao = null;
+}
+function irAte(a, destino) {
+  const sd = sede(a);
+  return [andar(a.sentado ? [a.lado, ...rota(a.lado, destino).slice(1)] : rota({ x: a.x, y: a.y }, destino))];
+}
+function voltar(a, de) {
+  return [andar([...rota(de, a.lado), sede(a)])];
+}
+
+/* ============================================================
+   5. EVENTOS — o contrato. A interface só REAGE.
+   ============================================================ */
+const efeitos = [];
+const HANDLERS = {
+  'task.assigned'({ from, to, msg }) {
+    const A = porId[from], B = porId[to];
+    if (!A || !B) return aviso(`agente desconhecido: ${from} → ${to}`);
+    enfileirar(A, ...irAte(A, B.lado), falar(msg, 2600), ...voltar(A, B.lado));
+  },
+  'agent.state'({ agent, state }) {
+    const a = porId[agent]; if (!a) return aviso(`agente desconhecido: ${agent}`);
+    a.estado = state;
+    if (state === 'thinking') a.balao = null;
+  },
+  'message'({ from, to, msg }) {
+    const A = porId[from], B = porId[to];
+    if (!A || !B) return aviso(`agente desconhecido: ${from} → ${to}`);
+    A.balao = { txt: msg, ate: performance.now() + 2600 };
+    efeitos.push({ tipo: 'carta', x0: A.x, y0: A.y - 14, x1: B.x, y1: B.y - 14, t0: performance.now(), dur: 1200 });
+  },
+  'task.done'({ agent, output }) {
+    const a = porId[agent]; if (!a) return aviso(`agente desconhecido: ${agent}`);
+    a.estado = 'idle';
+    enfileirar(a, ...irAte(a, ladoImpressora),
+      fazer(() => efeitos.push({ tipo: 'papel', t0: performance.now(), dur: 1600 })),
+      falar(`🖨️ ${output}`, 1800), ...voltar(a, ladoImpressora));
+  },
+  'error'({ agent, msg }) {
+    const a = porId[agent]; if (!a) return aviso(`agente desconhecido: ${agent}`);
+    a.estado = 'error';
+    a.balao = { txt: msg || 'Erro!', ate: performance.now() + 2600 };
+  },
+};
+
+const logEl = document.getElementById('log');
+function logar(html) { logEl.innerHTML = html + '\n' + logEl.innerHTML; }
+function aviso(m) { logar(`⚠️ ${m}`); }
+
+// Ponto único de entrada. Plugue qualquer cérebro aqui.
+function emitir(evt) {
+  const hora = new Date().toLocaleTimeString('pt-BR');
+  logar(`${hora} <span class="t">${evt.t}</span> ${JSON.stringify(evt).replace(/^\{"t":"[^"]+",?/, '{')}`);
+  (HANDLERS[evt.t] || (() => aviso(`evento sem handler: ${evt.t}`)))(evt);
+}
+window.escritorio = { emitir, contratar };
+
+// Ponte para o cérebro real: abra com ?ws=ws://localhost:8000/ws
+const wsUrl = new URLSearchParams(location.search).get('ws');
+if (wsUrl) {
+  const ws = new WebSocket(wsUrl);
+  ws.onopen = () => logar('🔌 conectado ao cérebro: ' + wsUrl);
+  ws.onmessage = e => emitir(JSON.parse(e.data));
+  ws.onerror = () => aviso('falha no WebSocket ' + wsUrl);
+}
+
+/* ============================================================
+   6. DEMO — eventos falsos (o que o cérebro vai emitir um dia)
+   ============================================================ */
+const DEMO = [
+  [0,     { t: 'task.assigned', from: 'gerente', to: 'dados', msg: 'Query: vendas por mês' }],
+  [300,   { t: 'task.assigned', from: 'gerente', to: 'estagiario', msg: 'Resume o e-mail do cliente' }],
+  [6000,  { t: 'agent.state', agent: 'dados', state: 'working' }],
+  [11000, { t: 'agent.state', agent: 'estagiario', state: 'thinking' }],
+  [12000, { t: 'message', from: 'dados', to: 'dev', msg: 'Tabela pronta! Monta o gráfico' }],
+  [12500, { t: 'agent.state', agent: 'dados', state: 'idle' }],
+  [13500, { t: 'agent.state', agent: 'dev', state: 'working' }],
+  [16000, { t: 'agent.state', agent: 'estagiario', state: 'idle' }],
+  [16200, { t: 'message', from: 'estagiario', to: 'gerente', msg: 'Cliente quer até sexta' }],
+  [18500, { t: 'error', agent: 'dev', msg: 'Gráfico quebrou 💥' }],
+  [21000, { t: 'agent.state', agent: 'dev', state: 'working' }],
+  [24000, { t: 'message', from: 'dev', to: 'impressora', msg: 'Gera o PDF' }],
+  [24500, { t: 'agent.state', agent: 'dev', state: 'idle' }],
+  [25500, { t: 'agent.state', agent: 'impressora', state: 'working' }],
+  [28500, { t: 'task.done', agent: 'impressora', output: 'relatorio.pdf' }],
+  [36000, { t: 'message', from: 'impressora', to: 'gerente', msg: 'relatorio.pdf entregue ✔' }],
+];
+let timers = [];
+function rodarDemo() {
+  pararDemo();
+  DEMO.forEach(([ms, e]) => timers.push(setTimeout(() => emitir(e), ms)));
+  timers.push(setTimeout(rodarDemo, 41000));
+}
+function pararDemo() { timers.forEach(clearTimeout); timers = []; }
+
+/* ============================================================
+   7. DESENHO
+   ============================================================ */
+function px(x, y, w, h, cor) { ctx.fillStyle = cor; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
+
+function desenharSprite(lookIdx, quadro, x, y, sentado, bob) {
+  const m = sprite(lookIdx, quadro);
+  const ox = Math.round(x - 6), oy = Math.round(y - 16 + bob);
+  const linhas = sentado ? 12 : 16;
+  for (let r = 0; r < linhas; r++) for (let c = 0; c < 12; c++) if (m[r][c]) px(ox + c, oy + r, 1, 1, m[r][c]);
+}
+
+function desenharCenario(agora) {
+  for (let y = 0; y < H; y += 10) for (let x = 0; x < W; x += 10)
+    px(x, y, 10, 10, ((x + y) / 10) % 2 ? '#c9b38f' : '#bfa982');
+  px(0, 0, W, 30, '#5d6b80'); px(0, 30, W, 3, '#3e4757');
+  [[30, 6], [200, 6]].forEach(([x, y]) => { px(x, y, 40, 18, '#2b3445'); px(x + 2, y + 2, 36, 14, '#9fd3ff'); px(x + 19, y + 2, 2, 14, '#2b3445'); });
+  // quadro de avisos
+  px(110, 5, 80, 20, '#7a5230'); px(112, 7, 76, 16, '#e9e2cf');
+  texto('SPRINT #1', 150, 17, '#7a5230', 5);
+  // plantas
+  [[10, 40], [290, 120]].forEach(([x, y]) => { px(x - 4, y, 8, 7, '#a0522d'); px(x - 6, y - 8, 12, 9, '#3c8d3c'); px(x - 3, y - 12, 6, 5, '#4caf50'); });
+  // impressora
+  const ix = IMPRESSORA_POS.x, iy = IMPRESSORA_POS.y;
+  px(ix - 12, iy, 24, 16, '#d9d9d9'); px(ix - 12, iy + 12, 24, 4, '#9e9e9e');
+  px(ix - 8, iy - 3, 16, 4, '#bdbdbd'); px(ix + 6, iy + 4, 3, 2, (agora / 400 | 0) % 2 ? '#4caf50' : '#1b5e20');
+  texto('PRINT', ix, iy + 10, '#555', 4);
+}
+
+function desenharMesa(a, agora) {
+  const { x, y } = a.mesa, L = a.larg;
+  // cadeira (aparece quando vazia)
+  px(x - 6, y - 9, 12, 10, '#3b3b4f');
+  // monitor lateral
+  const tela = a.estado === 'error' ? ((agora / 150 | 0) % 2 ? '#ff4d4d' : '#7a1010')
+    : a.estado === 'working' ? ((agora / 250 | 0) % 2 ? '#7fd4ff' : '#4aa8d8') : '#2a3a4a';
+  px(x + L - 13, y - 9, 10, 9, '#222'); px(x + L - 12, y - 8, 8, 6, tela); px(x + L - 9, y - 1, 2, 2, '#222');
+}
+function desenharFrenteMesa(a) {
+  const { x, y } = a.mesa, L = a.larg;
+  px(x - L, y, L * 2, 5, a.i === 0 ? '#9c6b3c' : '#8b5a2b');
+  px(x - L, y + 5, L * 2, 11, a.i === 0 ? '#7a4f26' : '#6e4520');
+  // plaquinha com o nome
+  const tam = a.nome.length > 8 ? 3 : 4;
+  const w = Math.min(L * 2 - 2, Math.max(24, a.nome.length * tam + 6));
+  px(x - w / 2, y + 7, w, 7, a.i === 0 ? '#ffd166' : '#f2ead3');
+  texto(a.nome.toUpperCase(), x, y + 12, '#2a1a10', tam);
+}
+
+function texto(t, x, y, cor, tam) {
+  ctx.fillStyle = cor; ctx.font = `${tam}px 'Press Start 2P', monospace`;
+  ctx.textAlign = 'center'; ctx.fillText(t, x, y);
+}
+
+function desenharBalao(a, agora) {
+  let txt = a.balao && a.balao.ate > agora ? a.balao.txt : null;
+  if (!txt && a.estado === 'thinking') txt = '.'.repeat(1 + (agora / 300 | 0) % 3).padEnd(3, ' ');
+  if (!txt) return;
+  if (txt.length > 26) txt = txt.slice(0, 25) + '…';
+  ctx.font = `4px 'Press Start 2P', monospace`;
+  const w = Math.ceil(ctx.measureText(txt).width) + 6, h = 9;
+  let bx = Math.min(Math.max(a.x - w / 2, 2), W - w - 2), by = a.y - 30;
+  px(bx - 1, by - 1, w + 2, h + 2, '#222'); px(bx, by, w, h, '#fff');
+  px(a.x - 1, by + h, 3, 2, '#fff'); px(a.x, by + h + 2, 1, 1, '#222');
+  ctx.fillStyle = '#222'; ctx.textAlign = 'left'; ctx.fillText(txt, bx + 3, by + 6.5);
+}
+
+function desenharEfeitos(agora) {
+  for (let i = efeitos.length - 1; i >= 0; i--) {
+    const e = efeitos[i], k = (agora - e.t0) / e.dur;
+    if (k >= 1) { efeitos.splice(i, 1); continue; }
+    if (e.tipo === 'carta') {
+      const x = e.x0 + (e.x1 - e.x0) * k, y = e.y0 + (e.y1 - e.y0) * k - Math.sin(k * Math.PI) * 25;
+      px(x - 3, y - 2, 7, 5, '#333'); px(x - 2, y - 1, 5, 3, '#fff'); px(x, y, 1, 1, '#c0392b');
+    }
+    if (e.tipo === 'papel') {
+      const ix = IMPRESSORA_POS.x, y = IMPRESSORA_POS.y - 3 - k * 14;
+      px(ix - 5, y - 8, 10, 10, '#fff'); px(ix - 3, y - 6, 6, 1, '#999'); px(ix - 3, y - 4, 6, 1, '#999'); px(ix - 3, y - 2, 4, 1, '#999');
+    }
+  }
+  // fumaça nos monitores com erro
+  agentes.filter(a => a.estado === 'error').forEach(a => {
+    for (let j = 0; j < 3; j++) {
+      const f = ((agora / 900 + j / 3) % 1);
+      px(a.mesa.x + a.larg - 9 + Math.sin(f * 6 + j) * 2, a.mesa.y - 12 - f * 14, 3, 3, `rgba(90,90,90,${1 - f})`);
+    }
+  });
+}
+
+/* ============================================================
+   8. LOOP
+   ============================================================ */
+let ultimo = performance.now();
+function loop(agora) {
+  const dt = Math.min(0.05, (agora - ultimo) / 1000); ultimo = agora;
+  agentes.forEach(a => atualizarAgente(a, dt, agora));
+
+  ctx.setTransform(ESCALA, 0, 0, ESCALA, 0, 0);
+  desenharCenario(agora);
+
+  // ordem de profundidade por Y: cadeira/monitor → pessoa → frente da mesa
+  const cenas = [];
+  agentes.forEach(a => {
+    cenas.push({ y: a.mesa.y - 1, f: () => desenharMesa(a, agora) });
+    cenas.push({ y: a.mesa.y + 15, f: () => desenharFrenteMesa(a) });
+    const andando = a.acao && a.acao.tipo === 'andar';
+    const quadro = andando ? ((a.passo * 8 | 0) % 2 ? 'passo1' : 'passo2') : 'parado';
+    const bob = a.sentado && a.estado === 'working' ? ((agora / 180 | 0) % 2) : 0;
+    cenas.push({ y: a.sentado ? a.mesa.y - 0.5 : a.y + 16, f: () => desenharSprite(a.look, quadro, a.x, a.y, a.sentado, bob) });
+  });
+  cenas.sort((p, q) => p.y - q.y).forEach(c => c.f());
+
+  desenharEfeitos(agora);
+  agentes.forEach(a => desenharBalao(a, agora));
+  requestAnimationFrame(loop);
+}
+
+/* ============================================================
+   9. GALERIA + BOTÕES
+   ============================================================ */
+function desenharGaleria() {
+  const g = document.getElementById('galeria'), c = g.getContext('2d'), E = 3;
+  g.width = LOOKS.length * 18 * E; g.height = 26 * E;
+  c.setTransform(E, 0, 0, E, 0, 0);
+  LOOKS.forEach((_, i) => {
+    const m = sprite(i, 'parado');
+    for (let r = 0; r < 16; r++) for (let k = 0; k < 12; k++) if (m[r][k]) { c.fillStyle = m[r][k]; c.fillRect(i * 18 + 3 + k, 1 + r, 1, 1); }
+    c.fillStyle = '#e8e6f0'; c.font = `5px 'Press Start 2P', monospace`; c.textAlign = 'center';
+    c.fillText(String(i), i * 18 + 9, 24);
+  });
+}
+
+let novos = 0;
+document.getElementById('btnContratar').onclick = () => {
+  novos++;
+  const a = contratar({ id: 'agente' + novos, nome: 'Agente ' + novos, look: (agentes.length) % LOOKS.length });
+  logar(`👋 contratado: <b>${a.id}</b> (look ${a.look})`);
+};
+document.getElementById('btnDemo').onclick = rodarDemo;
+document.getElementById('btnParar').onclick = pararDemo;
+document.getElementById('btnEmitir').onclick = () => {
+  try { emitir(JSON.parse(document.getElementById('evt').value)); }
+  catch (e) { aviso('JSON inválido: ' + e.message); }
+};
+
+(document.fonts ? document.fonts.ready : Promise.resolve()).then(desenharGaleria);
+desenharGaleria();
+requestAnimationFrame(loop);
+rodarDemo();
+</script>
+</body>
+</html>
