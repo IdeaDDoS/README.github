@@ -38,6 +38,11 @@
   <canvas id="sala"></canvas>
   <aside>
     <div class="box">
+      <h2>🗣️ DEMANDA (para o gerente)</h2>
+      <input id="demanda" placeholder="ex.: corrige o bug do login" style="width:100%;background:#15161f;color:var(--text);border:1px solid var(--line);font:12px ui-monospace,monospace;padding:6px;margin-bottom:6px">
+      <button id="btnPedir">Pedir</button>
+    </div>
+    <div class="box">
       <h2>📨 EVENTOS (o contrato)</h2>
       <pre id="log"></pre>
     </div>
@@ -267,13 +272,21 @@ function emitir(evt) {
 }
 window.escritorio = { emitir, contratar };
 
-// Ponte para o cérebro real: abra com ?ws=ws://localhost:8000/ws
-const wsUrl = new URLSearchParams(location.search).get('ws');
+// Ponte para o cérebro real. Servida pelo servidor.py, conecta sozinha;
+// aberta como arquivo, só com ?ws=ws://localhost:8000/ws. Sem cérebro, roda a demo.
+const wsUrl = new URLSearchParams(location.search).get('ws')
+  || (location.protocol.startsWith('http') ? `ws://${location.host}/ws` : null);
+let ws = null;
 if (wsUrl) {
-  const ws = new WebSocket(wsUrl);
+  ws = new WebSocket(wsUrl);
   ws.onopen = () => logar('🔌 conectado ao cérebro: ' + wsUrl);
   ws.onmessage = e => emitir(JSON.parse(e.data));
-  ws.onerror = () => aviso('falha no WebSocket ' + wsUrl);
+  ws.onerror = () => { aviso('falha no WebSocket ' + wsUrl + ' — rodando a demo'); ws = null; rodarDemo(); };
+}
+function pedir(demanda) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return aviso('sem cérebro conectado — rode o servidor.py');
+  ws.send(JSON.stringify({ demanda }));
+  logar(`🗣️ demanda: ${demanda}`);
 }
 
 /* ============================================================
@@ -445,6 +458,9 @@ document.getElementById('btnContratar').onclick = () => {
 };
 document.getElementById('btnDemo').onclick = rodarDemo;
 document.getElementById('btnParar').onclick = pararDemo;
+const demandaEl = document.getElementById('demanda');
+document.getElementById('btnPedir').onclick = () => { if (demandaEl.value.trim()) pedir(demandaEl.value.trim()); };
+demandaEl.onkeydown = e => { if (e.key === 'Enter') document.getElementById('btnPedir').click(); };
 document.getElementById('btnEmitir').onclick = () => {
   try { emitir(JSON.parse(document.getElementById('evt').value)); }
   catch (e) { aviso('JSON inválido: ' + e.message); }
@@ -453,7 +469,7 @@ document.getElementById('btnEmitir').onclick = () => {
 (document.fonts ? document.fonts.ready : Promise.resolve()).then(desenharGaleria);
 desenharGaleria();
 requestAnimationFrame(loop);
-rodarDemo();
+if (!wsUrl) rodarDemo();
 </script>
 </body>
 </html>
