@@ -1,0 +1,47 @@
+{
+  "_leia": "A CADEIRA é a casca: mesa, boneco e posição no escritório. Nunca muda. O AGENTE é quem senta nela: troque o bloco 'agente' e a plaquinha muda junto. 'fonte' aponta para o arquivo do agente real (vazio = sem agente ainda). 'regras' são as respostas prontas da v2: a primeira cadeira cuja palavra aparece na demanda leva a tarefa.",
+  "cadeiras": [
+    {
+      "cadeira": "gerente",
+      "agente": {
+        "nome": "Gerente de desenvolvimento dos dashboards US Media",
+        "placa": "Ger. Dash",
+        "fonte": ""
+      }
+    },
+    {
+      "cadeira": "dev",
+      "agente": {
+        "nome": "Desenvolvedor",
+        "placa": "Dev",
+        "fonte": ""
+      },
+      "regras": {
+        "palavras": ["bug", "código", "codigo", "script", "corrige", "erro"],
+        "responde": "Corrigido e testado",
+        "entrega": "correcao.diff"
+      }
+    },
+    {
+      "cadeira": "dados",
+      "agente": {
+        "nome": "Analista de dados",
+        "placa": "Dados",
+        "fonte": ""
+      },
+      "regras": {
+        "palavras": ["query", "sql", "tabela", "bigquery", "dados"],
+        "responde": "Tabela pronta",
+        "entrega": "consulta.sql"
+      }
+    },
+    {
+      "cadeira": "estagiario",
+      "agente": { "nome": "Estagiário", "placa": "Estagiário", "fonte": "" }
+    },
+    {
+      "cadeira": "impressora",
+      "agente": { "nome": "Garoto da impressora", "placa": "Impressora", "fonte": "" }
+    }
+  ]
+}

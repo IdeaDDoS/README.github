@@ -220,6 +220,11 @@ function voltar(a, de) {
    ============================================================ */
 const efeitos = [];
 const HANDLERS = {
+  // A cadeira é a casca; o cérebro diz quem senta nela. Só a plaquinha muda.
+  'seat.assign'({ seat, nome }) {
+    const a = porId[seat]; if (!a) return aviso(`cadeira desconhecida: ${seat}`);
+    a.nome = nome;
+  },
   'task.assigned'({ from, to, msg }) {
     const A = porId[from], B = porId[to];
     if (!A || !B) return aviso(`agente desconhecido: ${from} → ${to}`);
